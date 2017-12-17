@@ -17,7 +17,7 @@ import javax.swing.JOptionPane;
  */
 public class Main {
     //Definimos variables estaticas globales de la clase
-    private static Connection con;
+    private static Connection conn;
     private static Statement st;
 
     /**
@@ -26,8 +26,8 @@ public class Main {
     public static void main(String[] args) {
         //Creamos la conexión a la base de datos
         try {
-            con = DriverManager.getConnection("jdbc:ucanaccess://AD02.mdb");
-            st = con.createStatement();  
+            conn = DriverManager.getConnection("jdbc:ucanaccess://AD02.mdb");
+            st = conn.createStatement();  
         } catch (SQLException ex) {
             System.err.println("SQL Exception: " + ex.toString());
         }
@@ -40,14 +40,18 @@ public class Main {
         int menu = Integer.parseInt(JOptionPane.showInputDialog(""
                 + "Introduzca un valor a ejecutar: \n"
                 + "1 - Crear la tabla de clientes \n"
-                + "2 - Crear la tabla de motos \n"));
-        
+                + "2 - Crear la tabla de motos \n"
+                + "3 -  Inserta clientes"));
         switch(menu) {
             case 1:
                 creaCliente();
+                menu();
                 break;
             case 2:
                 creaMoto();
+                menu();
+            case 3:
+                insertaClientes();
             default:
                 break;
         }
@@ -63,7 +67,6 @@ public class Main {
                     + "email VARCHAR2(100), "
                     + "telefono INT)");
             //Llamamos al menu de nuevo para que sea mostrado al terminar
-            menu();
         } catch (SQLException e) {
             System.err.println("SQL Exception: " + e.toString());
         }
@@ -80,7 +83,17 @@ public class Main {
             //modificamos y añadimos la relación
             st.execute("ALTER TABLE moto ADD CONSTRAINT fk_cliente FOREIGN KEY (codCliente) REFERENCES cliente (DNI) ON DELETE CASCADE");
             //Llamamos al menu de nuevo para que sea mostrado al terminar
-            menu();
+        } catch (SQLException e) {
+            System.err.println("SQL Exception: " + e.toString());
+        }
+    }
+    
+    private static void insertaClientes() {
+        try {
+            conn.setAutoCommit(false);
+            st.execute("insert into cliente (DNI, nombre, apellidos, email, telefono) values('33305686F' , 'JUAN', 'JUAN JUAN', 'juanjuan@juan.es', 954969696)");
+            st.execute("insert into cliente (DNI, nombre, apellidos, email, telefono) values('72175846Y' , 'ANA', 'ANA ANA', 'anaana@ana.es', 954696969)");
+            conn.commit();
         } catch (SQLException e) {
             System.err.println("SQL Exception: " + e.toString());
         }
