@@ -7,6 +7,7 @@ package Principal;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -18,8 +19,9 @@ import javax.swing.JOptionPane;
  */
 public class Main {
     //Definimos variables estaticas globales de la clase
-    private static Connection conn;
+    private static Connection con;
     private static Statement st;
+    private static PreparedStatement ps;
 
     /**
      * @param args the command line arguments
@@ -27,8 +29,8 @@ public class Main {
     public static void main(String[] args) {
         //Creamos la conexión a la base de datos
         try {
-            conn = DriverManager.getConnection("jdbc:ucanaccess://AD02.mdb");
-            st = conn.createStatement();  
+            con = DriverManager.getConnection("jdbc:ucanaccess://AD02.mdb");
+            st = con.createStatement();  
         } catch (SQLException ex) {
             System.err.println("SQL Exception: " + ex.toString());
         }
@@ -38,13 +40,18 @@ public class Main {
     
     private static void menu() {   
         String menu = JOptionPane.showInputDialog(
-                   "Introduzca un valor a ejecutar: \n"
+                   "Introduzca un valor a ejecutar: \n\n"
+                + "**************************************************************\n"
                 + "1 - Crear la tabla de clientes \n"
                 + "2 - Crear la tabla de motos \n"
                 + "3 - Inserta clientes\n"
                 + "4 - Inserta motos\n"
                 + "5 - Consulta clientes\n"
-                + "6 - Consulta motos");
+                + "6 - Consulta motos\n"
+                + "7 - Actualiza un cliente\n"
+                + "8 - Actualiza un cliente con una consulta preparada\n"
+                + "9 - Actualiza una moto con una consulta preparada\n"
+                + "0 - Todas las anteriores");
         if (menu != null) {
             switch(menu) {
                 case "1":
@@ -69,6 +76,22 @@ public class Main {
                     break;
                 case "6":
                     recuperaMotos();
+                    menu();
+                    break;
+                case "7":
+                    actualizaCliente1();
+                    menu();
+                    break;
+                case "8":
+                    actualizaCliente2();
+                    menu();
+                    break;
+                case "9":
+                    actualizaMoto1();
+                    menu();
+                    break;
+                case "0":
+                    todos();
                     menu();
                     break;
                 default:
@@ -96,7 +119,6 @@ public class Main {
     
     private static void creaMoto() {
         try {
-            //Ejecutamos la consulta
             st.execute("CREATE TABLE moto (matricula VARCHAR2(8) PRIMARY KEY NOT NULL, "
                     + "modelo VARCHAR2(50), "
                     + "marca VARCHAR2(100), "
@@ -113,12 +135,12 @@ public class Main {
     
     private static void insertaClientes() {
         try {
-            conn.setAutoCommit(false);
+            con.setAutoCommit(false);
             st.execute("insert into cliente (DNI, nombre, apellidos, email, telefono) "
                     + "values('33305686F' , 'JUAN', 'JUAN JUAN', 'juanjuan@juan.es', 954969696)");
             st.execute("insert into cliente (DNI, nombre, apellidos, email, telefono) "
                     + "values('72175846Y' , 'ANA', 'ANA ANA', 'anaana@ana.es', 954696969)");
-            conn.commit();
+            con.commit();
         } catch (SQLException e) {
             System.err.println("SQL Exception: " + e.toString());
         }
@@ -126,12 +148,12 @@ public class Main {
     
     private static void insertaMotos() {
         try {
-            conn.setAutoCommit(false);
+            con.setAutoCommit(false);
             st.execute("insert into moto (matricula, modelo, marca, color, codCliente) "
                     + "values('9999HHF', 'Z750', 'KAWASAKI', 'VERDE', '33305686F')");
             st.execute("insert into moto (matricula, modelo, marca, color, codCliente) "
                     + "values('6666FFH', 'GSR600', 'SUZUKI', 'NEGRA', '72175846Y')");
-            conn.commit();
+            con.commit();
         } catch (SQLException e) {
             System.err.println("SQL Exception: " + e.toString());
         }
@@ -151,7 +173,6 @@ public class Main {
                 System.out.println("DNI: " + dni + " - Nombre y apellidos: " + nombre + " " + apellidos 
                         + " - Email: " + email + " - Teléfono: " + telefono); 
             }
-            
         } catch (SQLException e) {
             System.err.println("SQL Exception: " + e.toString());
         }
@@ -171,7 +192,54 @@ public class Main {
                 System.out.println("Matricula: " + matricula + " - Marca y Modelo " + marca + " " + modelo 
                         + " - Color: " + color + " - DNI Propietario: " + cliente); 
             }
-            
+        } catch (SQLException e) {
+            System.err.println("SQL Exception: " + e.toString());
+        }
+    }
+    
+    private static void actualizaCliente1() {
+        try {
+            st.executeUpdate("UPDATE cliente SET nombre = 'PEPE' WHERE DNI = '33305686F'");
+        } catch (SQLException e) {
+            System.err.println("SQL Exception: " + e.toString());
+        }
+    }
+    
+    private static void actualizaCliente2() {
+        try {
+            ps = con.prepareStatement("UPDATE cliente SET nombre = ? WHERE DNI = ?" );
+            ps.setString(1, "JOSEFA");
+            ps.setString(2, "72175846Y");
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            System.err.println("SQL Exception: " + e.toString());
+        }
+    }
+    
+    private static void actualizaMoto1() {
+        try {
+            ps = con.prepareStatement("UPDATE moto SET color = ? WHERE matricula = ?" );
+            ps.setString(1, "ROJA");
+            ps.setString(2, "9999HHF");
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            System.err.println("SQL Exception: " + e.toString());
+        }
+    }
+    
+    private static void todos() {
+        try {
+            con.setAutoCommit(false);
+            creaCliente();
+            creaMoto();
+            insertaClientes();
+            insertaMotos();
+            recuperaClientes();
+            recuperaMotos();
+            actualizaCliente1();
+            actualizaCliente2();
+            actualizaMoto1();
+            con.commit();   
         } catch (SQLException e) {
             System.err.println("SQL Exception: " + e.toString());
         }
