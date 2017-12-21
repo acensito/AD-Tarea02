@@ -204,27 +204,43 @@ public class Main {
     }
     
     /**
-     * Método inserta clientes. Comprobará previamente si dichos clientes existen en la base de datos
+     * Método inserta clientes. Comprobará previamente si dichos clientes existen en la base de datos. Si no existen en la
+     * tabla, los insertará y en caso contrario, omitirá el paso.
      */
     private static void insertaClientes() {
         try {
+            //Desactivamos los commits
             con.setAutoCommit(false);
-            
+            //Consultamos si existe un cliente 
             rs = st.executeQuery("SELECT * FROM cliente WHERE DNI = '33305686F' ");
+            //Si existe
             if(rs.next()) {
-                System.out.println("Ya existe el registro, se omite su inserción");
+                //Lanzamos mensaje feedback
+                System.err.println("Ya existe el registro, se omite su inserción");
+            //Caso contrario
             } else {
+                //Ejecutamos la consulta e insertamos los datos
                 st.execute("insert into cliente (DNI, nombre, apellidos, email, telefono) "
                         + "values('33305686F' , 'JUAN', 'JUAN JUAN', 'juanjuan@juan.es', 954969696)");
+                //Lanzamos mensaje feedback de la inserción
+                System.out.println("Cliente insertado.");
             }
-            
+            //Procedemos de igual manera que la anterior
+            //Consultamos si existe un cliente
             rs = st.executeQuery("SELECT * FROM cliente WHERE DNI = '72175846Y' ");
+            //Si existe
             if (rs.next()) {
-                System.out.println("Ya existe el registro, se omite su inserción");
+                //Lanzamos mensaje feedback
+                System.err.println("Ya existe el registro, se omite su inserción");
+            //Caso contrario
             } else {
-            st.execute("insert into cliente (DNI, nombre, apellidos, email, telefono) "
-                    + "values('72175846Y' , 'ANA', 'ANA ANA', 'anaana@ana.es', 954696969)");
+                //Ejecutamos la consulta e insertamos los datos
+                st.execute("insert into cliente (DNI, nombre, apellidos, email, telefono) "
+                        + "values('72175846Y' , 'ANA', 'ANA ANA', 'anaana@ana.es', 954696969)");
+                //Lanzamos mensaje feedback de la inserción
+                System.out.println("Cliente insertado.");
             }
+            //Hacemos commit a los cambios realizados
             con.commit();
         //Si existen errores
         } catch (SQLException e) {
@@ -240,25 +256,44 @@ public class Main {
         }
     }
     
+    /**
+     * Método inserta motos, que comprueba previamente si una moto esta insertada. En caso contrario, inserta la misma en
+     * la base de datos.
+     */
     private static void insertaMotos() {
         try {
+            //Desactivamos los commits
             con.setAutoCommit(false);
+            //Consultamos si existe una moto previamente
             rs = st.executeQuery("SELECT * FROM moto WHERE matricula = '9999HHF' ");
+            //Si existe
             if (rs.next()) {
-                System.out.println("Ya existe el registro, se omite su inserción");
+                //Lazamos mensaje feedback
+                System.err.println("Ya existe el registro, se omite su inserción");
+            //Caso contrario
             } else {
+                //Ejecutamos la consulta e insertamos los datos
                 st.execute("insert into moto (matricula, modelo, marca, color, codCliente) "
                         + "values('9999HHF', 'Z750', 'KAWASAKI', 'VERDE', '33305686F')");
+                //Lanzamos mensaje feedback de la inserción
+                System.out.println("Moto insertada.");
             }
-            
+            //Proedemos de igual manera que en el anterior
+            //Consultamos si existe una moto previamente
             rs = st.executeQuery("SELECT * FROM moto WHERE matricula = '6666FFH' ");
+            //Si existe
             if (rs.next()) {
+                //Lanzamos mensaje feedback
                 System.out.println("Ya existe el registro, se omite su inserción");
+            //Caso contrario
             } else {
+                //Ejecutamos la consulta
                 st.execute("insert into moto (matricula, modelo, marca, color, codCliente) "
                         + "values('6666FFH', 'GSR600', 'SUZUKI', 'NEGRA', '72175846Y')");
+                //Lanzamos mensaje feedback de la inserción
+                System.out.println("Moto insertada.");
             }
-
+            //Hacemos commit a los cambios realizados
             con.commit();
         //Si existen errores
         } catch (SQLException e) {
@@ -274,77 +309,131 @@ public class Main {
         }
     }
     
+    /**
+     * Método recuperaClientes, que consulta y muestra los clientes de la tabla
+     */
     private static void recuperaClientes() {
         try {
+            //Ejecutamos la consulta
             rs = st.executeQuery("SELECT * FROM cliente");
-            
-            while (rs.next()) {
-                String dni = rs.getString("DNI");
-                String nombre = rs.getString("nombre");
-                String apellidos = rs.getString("apellidos");
-                String email = rs.getString("email");
-                int telefono = rs.getInt("telefono");
-                //imprimimos
-                System.out.println("DNI: " + dni + " - Nombre y apellidos: " + nombre + " " + apellidos 
-                        + " - Email: " + email + " - Teléfono: " + telefono); 
+            //Si existen resultados
+            if (rs.next()) {
+                //Mientras existan resultados, se van asignando los campos a variables y posteriormente se muestran
+                while (rs.next()) {
+                    String dni = rs.getString("DNI");
+                    String nombre = rs.getString("nombre");
+                    String apellidos = rs.getString("apellidos");
+                    String email = rs.getString("email");
+                    int telefono = rs.getInt("telefono");
+                    //Imprimimos en pantalla
+                    System.out.println("DNI: " + dni + " - Nombre y apellidos: " + nombre + " " + apellidos 
+                            + " - Email: " + email + " - Teléfono: " + telefono); 
+                }
+            //Caso contrario
+            } else {
+                //Lanzamos mensaje feedback
+                System.err.println("No existen clientes que mostrar");
             }
+        //Si existen errores SQL
         } catch (SQLException e) {
+            //Lanzamos mensaje feedback
             System.err.println("SQL Error: " + e.toString());
         }
     }
     
+    /**
+     * Método recuperaMotos, que consulta y muestra las motos de la tabla
+     */
     private static void recuperaMotos() {
         try {
+            //Ejecutamos la consulta
             rs = st.executeQuery("SELECT * FROM moto");
-            
-            while (rs.next()) {
-                String matricula = rs.getString("matricula");
-                String modelo = rs.getString("modelo");
-                String marca = rs.getString("marca");
-                String color = rs.getString("color");
-                String cliente = rs.getString("codCliente");
-                //imprimimos
-                System.out.println("Matricula: " + matricula + " - Marca y Modelo " + marca + " " + modelo 
-                        + " - Color: " + color + " - DNI Propietario: " + cliente); 
+            //Si existen resultados
+            if (rs.next()) {
+                //Mientras existan resultados, se van asignando los campos a variables y posteriormente se muestran
+                while (rs.next()) {
+                    String matricula = rs.getString("matricula");
+                    String modelo = rs.getString("modelo");
+                    String marca = rs.getString("marca");
+                    String color = rs.getString("color");
+                    String cliente = rs.getString("codCliente");
+                    //Imprimimos en pantalla
+                    System.out.println("Matricula: " + matricula + " - Marca y Modelo " + marca + " " + modelo 
+                            + " - Color: " + color + " - DNI Propietario: " + cliente); 
+                }
+            //Caso contrario
+            } else {
+                //Lanzamos mensaje feedback
+                System.err.println("No existen motos que mostrar");
             }
+        //Si existen errores SQL
         } catch (SQLException e) {
+            //Lanzamos mensaje feedback
             System.err.println("SQL Error: " + e.toString());
         }
     }
     
+    /**
+     * Método actualizaCliente1, que actualiza un cliente definido
+     */
     private static void actualizaCliente1() {
         try {
+            //Ejecutamos la consulta
             st.executeUpdate("UPDATE cliente SET nombre = 'PEPE' WHERE DNI = '33305686F'");
+        //Si existen errores SQL
         } catch (SQLException e) {
+            //Lanzamos mensaje feedback
             System.err.println("SQL Error: " + e.toString());
         }
     }
     
+    /**
+     * Método actualizaCliente2, que actualiza un cliente definido usando consultas preparadas
+     */
     private static void actualizaCliente2() {
         try {
+            //Preparamos la consulta
             ps = con.prepareStatement("UPDATE cliente SET nombre = ? WHERE DNI = ?" );
+            //Definimos los parametros
             ps.setString(1, "JOSEFA");
             ps.setString(2, "72175846Y");
+            //Ejecutamos la consulta
             ps.executeUpdate();
+        //Si existen errores SQL
         } catch (SQLException e) {
+            //Lanzamos mensaje feedback
             System.err.println("SQL Error: " + e.toString());
         }
     }
     
+    /**
+     * Método actualizaMoto1, que actualiza una moto usando consultas preparadas
+     */
     private static void actualizaMoto1() {
         try {
+            //Preparamos la consulta
             ps = con.prepareStatement("UPDATE moto SET color = ? WHERE matricula = ?" );
+            //Definimos los parametros
             ps.setString(1, "ROJA");
             ps.setString(2, "9999HHF");
+            //Ejecutamos la consulta
             ps.executeUpdate();
+        //Si existen errores SQL
         } catch (SQLException e) {
+            //Lanzamos mensaje feedback
             System.err.println("SQL Error: " + e.toString());
         }
     }
     
+    /**
+     * Método todos, que ejecutará todos los pasos de un solo golpe. Se desactivarán los commits y en el caso de existir
+     * algún fallo durante las transacciones, se regresará al estado anterior.
+     */
     private static void todos() {
         try {
+            //Desactivamos los commits
             con.setAutoCommit(false);
+            //Llamamos a los metodos necesarios
             creaCliente();
             creaMoto();
             insertaClientes();
@@ -354,6 +443,7 @@ public class Main {
             actualizaCliente1();
             actualizaCliente2();
             actualizaMoto1();
+            //Realizamos commit
             con.commit();   
         //Si existen errores
         } catch (SQLException e) {
