@@ -52,7 +52,8 @@ public class Main {
      * Método Menú, que se mostrará en un JOptionpane cada vez que sea invocado. Si se pulsa cancelar o aceptar con el
      * cuadro de dialogo vacio, se cerrará la aplicación.
      */
-    private static void menu() {   
+    private static void menu() {
+        //Lanzamos panel input
         String menu = JOptionPane.showInputDialog(
                    "Introduzca un valor a ejecutar:\n"
                 + "***********************************\n"
@@ -66,7 +67,9 @@ public class Main {
                 + "8 - Actualiza un cliente con una consulta preparada\n"
                 + "9 - Actualiza una moto con una consulta preparada\n"
                 + "0 - Todas las anteriores");
+        //En el caso que no se cancele 
         if (menu != null) {
+            //Dependiendo del valor introducido, llamamos al método correspondiente
             switch(menu) {
                 case "1":
                     creaCliente();
@@ -109,9 +112,18 @@ public class Main {
                     menu();
                     break;
                 default:
+                    //Si se introduce cualquier otra cosa, se llama al menu nuevamente
+                    menu();
                     break;
             }
         } else {
+            //Cerramos la conexión
+            try {
+                con.close();
+            //En el caso de existir errores SQL, se notifican los mismos
+            } catch (SQLException e) {
+                System.err.println("SQL Error: " + e.toString());
+            }
             //Mensaje feedback de fin de la aplicación
             System.err.println("Salida del programa");
         }
@@ -123,10 +135,8 @@ public class Main {
      */
     private static void creaCliente() {
         try {
-            //Consultamos si existe la tabla llamada cliente
-            rs = db.getTables(null, null, "cliente", null);
             //Si existe la tabla ya creada en la BD
-            if (rs.next()){
+            if (compruebaTabla("cliente")){
                 //En caso de existir, se notifica al usuario feedback
                 System.err.println("Tabla existente, se omite el paso");
             } else {
@@ -152,18 +162,16 @@ public class Main {
      */
     private static void creaMoto() {
         try {
-            //Consultamos si existe una tabla llamada cliente
-            rs = db.getTables(null, null, "cliente", null);
-             if (rs.next()){
-                //Se consulta si existe la tabla moto
-                rs = db.getTables(null, null, "moto", null);
-                if (rs.next()) {
+            //Llamamos al metodo compruebaCliente para comprobar si existe la tabla
+            if (compruebaTabla("cliente")){
+                //Se consulta si existe la tabla moto llamando al metodo
+                if (compruebaTabla("moto")) {
                     //En caso de existir, se notifica al usuario feedback
                     System.err.println("Tabla existente, se omite el paso");
                 } else {
                     //En el caso de no existir, se crea la tabla moto ejecutando la consulta correspondiente
                     //Desactivamos los commits
-                    con.setAutoCommit(false);
+                    //con.setAutoCommit(false); //Da error paso a paso
                     //Ejecutamos la consulta de creacion de tabla
                     st.execute("CREATE TABLE moto (matricula VARCHAR2(8) PRIMARY KEY NOT NULL, "
                             + "modelo VARCHAR2(50), "
@@ -176,7 +184,7 @@ public class Main {
                     st.execute("ALTER TABLE moto ADD CONSTRAINT fk_cliente FOREIGN KEY (codCliente) "
                             + "REFERENCES cliente (DNI) ON DELETE CASCADE");
                     //Realizamos commit
-                    con.commit();
+                    //con.commit(); //De esta manera da error paso a paso
                     //Se notitica la creación de la relación feedback
                     System.out.println("Relación cliente-moto, creada.");
                 }
@@ -209,39 +217,46 @@ public class Main {
      */
     private static void insertaClientes() {
         try {
-            //Desactivamos los commits
-            con.setAutoCommit(false);
-            //Consultamos si existe un cliente 
-            rs = st.executeQuery("SELECT * FROM cliente WHERE DNI = '33305686F' ");
-            //Si existe
-            if(rs.next()) {
-                //Lanzamos mensaje feedback
-                System.err.println("Ya existe el registro, se omite su inserción");
-            //Caso contrario
+            //Comprobamos previamente si existe la tabla cliente
+            if (compruebaTabla("cliente")) {
+                //Desactivamos los commits
+                con.setAutoCommit(false);
+                //Consultamos si existe un cliente 
+                rs = st.executeQuery("SELECT * FROM cliente WHERE DNI = '33305686F' ");
+                //Si existe
+                if(rs.next()) {
+                    //Lanzamos mensaje feedback
+                    System.err.println("Ya existe el registro, se omite su inserción");
+                //Caso contrario
+                } else {
+                    //Ejecutamos la consulta e insertamos los datos
+                    st.execute("insert into cliente (DNI, nombre, apellidos, email, telefono) "
+                            + "values('33305686F' , 'JUAN', 'JUAN JUAN', 'juanjuan@juan.es', 954969696)");
+                    //Lanzamos mensaje feedback de la inserción
+                    System.out.println("Cliente insertado.");
+                }
+                //Procedemos de igual manera que la anterior
+                //Consultamos si existe un cliente
+                rs = st.executeQuery("SELECT * FROM cliente WHERE DNI = '72175846Y' ");
+                //Si existe
+                if (rs.next()) {
+                    //Lanzamos mensaje feedback
+                    System.err.println("Ya existe el registro, se omite su inserción");
+                //Caso contrario
+                } else {
+                    //Ejecutamos la consulta e insertamos los datos
+                    st.execute("insert into cliente (DNI, nombre, apellidos, email, telefono) "
+                            + "values('72175846Y' , 'ANA', 'ANA ANA', 'anaana@ana.es', 954696969)");
+                    //Lanzamos mensaje feedback de la inserción
+                    System.out.println("Cliente insertado.");
+                }
+                //Hacemos commit a los cambios realizados
+                con.commit();
+            //En el caso de no existir la tabla cliente
             } else {
-                //Ejecutamos la consulta e insertamos los datos
-                st.execute("insert into cliente (DNI, nombre, apellidos, email, telefono) "
-                        + "values('33305686F' , 'JUAN', 'JUAN JUAN', 'juanjuan@juan.es', 954969696)");
-                //Lanzamos mensaje feedback de la inserción
-                System.out.println("Cliente insertado.");
+                //Notificamos dicha eventualidad feedback
+                System.err.println("Debe crear previamente la tabla cliente.");   
             }
-            //Procedemos de igual manera que la anterior
-            //Consultamos si existe un cliente
-            rs = st.executeQuery("SELECT * FROM cliente WHERE DNI = '72175846Y' ");
-            //Si existe
-            if (rs.next()) {
-                //Lanzamos mensaje feedback
-                System.err.println("Ya existe el registro, se omite su inserción");
-            //Caso contrario
-            } else {
-                //Ejecutamos la consulta e insertamos los datos
-                st.execute("insert into cliente (DNI, nombre, apellidos, email, telefono) "
-                        + "values('72175846Y' , 'ANA', 'ANA ANA', 'anaana@ana.es', 954696969)");
-                //Lanzamos mensaje feedback de la inserción
-                System.out.println("Cliente insertado.");
-            }
-            //Hacemos commit a los cambios realizados
-            con.commit();
         //Si existen errores
         } catch (SQLException e) {
             //Mensaje feedback del error
@@ -262,39 +277,45 @@ public class Main {
      */
     private static void insertaMotos() {
         try {
-            //Desactivamos los commits
-            con.setAutoCommit(false);
-            //Consultamos si existe una moto previamente
-            rs = st.executeQuery("SELECT * FROM moto WHERE matricula = '9999HHF' ");
-            //Si existe
-            if (rs.next()) {
-                //Lazamos mensaje feedback
-                System.err.println("Ya existe el registro, se omite su inserción");
-            //Caso contrario
+            if(compruebaTabla("moto")) {
+                //Desactivamos los commits
+                con.setAutoCommit(false);
+                //Consultamos si existe una moto previamente
+                rs = st.executeQuery("SELECT * FROM moto WHERE matricula = '9999HHF' ");
+                //Si existe
+                if (rs.next()) {
+                    //Lazamos mensaje feedback
+                    System.err.println("Ya existe el registro, se omite su inserción");
+                //Caso contrario
+                } else {
+                    //Ejecutamos la consulta e insertamos los datos
+                    st.execute("insert into moto (matricula, modelo, marca, color, codCliente) "
+                            + "values('9999HHF', 'Z750', 'KAWASAKI', 'VERDE', '33305686F')");
+                    //Lanzamos mensaje feedback de la inserción
+                    System.out.println("Moto insertada.");
+                }
+                //Proedemos de igual manera que en el anterior
+                //Consultamos si existe una moto previamente
+                rs = st.executeQuery("SELECT * FROM moto WHERE matricula = '6666FFH' ");
+                //Si existe
+                if (rs.next()) {
+                    //Lanzamos mensaje feedback
+                    System.err.println("Ya existe el registro, se omite su inserción");
+                //Caso contrario
+                } else {
+                    //Ejecutamos la consulta
+                    st.execute("insert into moto (matricula, modelo, marca, color, codCliente) "
+                            + "values('6666FFH', 'GSR600', 'SUZUKI', 'NEGRA', '72175846Y')");
+                    //Lanzamos mensaje feedback de la inserción
+                    System.out.println("Moto insertada.");
+                }
+                //Hacemos commit a los cambios realizados
+                con.commit();
+            //En el caso de no existir la tabla moto
             } else {
-                //Ejecutamos la consulta e insertamos los datos
-                st.execute("insert into moto (matricula, modelo, marca, color, codCliente) "
-                        + "values('9999HHF', 'Z750', 'KAWASAKI', 'VERDE', '33305686F')");
-                //Lanzamos mensaje feedback de la inserción
-                System.out.println("Moto insertada.");
+                //Notificamos dicha eventualidad feedback
+                System.err.println("Debe crear previamente la tabla moto.");   
             }
-            //Proedemos de igual manera que en el anterior
-            //Consultamos si existe una moto previamente
-            rs = st.executeQuery("SELECT * FROM moto WHERE matricula = '6666FFH' ");
-            //Si existe
-            if (rs.next()) {
-                //Lanzamos mensaje feedback
-                System.out.println("Ya existe el registro, se omite su inserción");
-            //Caso contrario
-            } else {
-                //Ejecutamos la consulta
-                st.execute("insert into moto (matricula, modelo, marca, color, codCliente) "
-                        + "values('6666FFH', 'GSR600', 'SUZUKI', 'NEGRA', '72175846Y')");
-                //Lanzamos mensaje feedback de la inserción
-                System.out.println("Moto insertada.");
-            }
-            //Hacemos commit a los cambios realizados
-            con.commit();
         //Si existen errores
         } catch (SQLException e) {
             //Mensaje feedback del error
@@ -314,10 +335,13 @@ public class Main {
      */
     private static void recuperaClientes() {
         try {
-            //Ejecutamos la consulta
-            rs = st.executeQuery("SELECT * FROM cliente");
-            //Si existen resultados
-            if (rs.next()) {
+            //Comprobamos previamente si existe la tabla
+            if (compruebaTabla("cliente")) {
+                //Ejecutamos la consulta
+                rs = st.executeQuery("SELECT * FROM cliente");
+                //Flag de control de resultados, de inicio, damos por sentado que no hay resultados
+                boolean resultados = false;
+                //Si existen resultados...
                 //Mientras existan resultados, se van asignando los campos a variables y posteriormente se muestran
                 while (rs.next()) {
                     String dni = rs.getString("DNI");
@@ -328,11 +352,17 @@ public class Main {
                     //Imprimimos en pantalla
                     System.out.println("DNI: " + dni + " - Nombre y apellidos: " + nombre + " " + apellidos 
                             + " - Email: " + email + " - Teléfono: " + telefono); 
+                    //Al existir un resultado, cambiamos el flag de control a true
+                    resultados = true;
                 }
-            //Caso contrario
+                //Si no hay resultados
+                if (!resultados) {
+                    System.err.println("No existen clientes que mostrar");
+                }
+            //En el caso de no existir la tabla cliente
             } else {
-                //Lanzamos mensaje feedback
-                System.err.println("No existen clientes que mostrar");
+                //Notificamos dicha eventualidad feedback
+                System.err.println("Debe crear previamente la tabla cliente para poder realizar consultas.");   
             }
         //Si existen errores SQL
         } catch (SQLException e) {
@@ -346,10 +376,13 @@ public class Main {
      */
     private static void recuperaMotos() {
         try {
-            //Ejecutamos la consulta
-            rs = st.executeQuery("SELECT * FROM moto");
-            //Si existen resultados
-            if (rs.next()) {
+            //Comprobamos previamente si existe la tabla
+            if (compruebaTabla("moto")) {
+                //Ejecutamos la consulta
+                rs = st.executeQuery("SELECT * FROM moto");
+                //Flag de control de resultados, de inicio, damos por sentado que no hay resultados
+                boolean resultados = false;
+                //Si existen resultados...
                 //Mientras existan resultados, se van asignando los campos a variables y posteriormente se muestran
                 while (rs.next()) {
                     String matricula = rs.getString("matricula");
@@ -360,11 +393,17 @@ public class Main {
                     //Imprimimos en pantalla
                     System.out.println("Matricula: " + matricula + " - Marca y Modelo " + marca + " " + modelo 
                             + " - Color: " + color + " - DNI Propietario: " + cliente); 
+                    //Al existir un resultado, cambiamos el flag de control a true
+                    resultados = true;
                 }
-            //Caso contrario
+                //Si no hay resultados
+                if (!resultados) {
+                    System.err.println("No existen motos que mostrar");
+                }
+            //En el caso de no existir la tabla moto
             } else {
-                //Lanzamos mensaje feedback
-                System.err.println("No existen motos que mostrar");
+                //Notificamos dicha eventualidad feedback
+                System.err.println("Debe crear previamente la tabla moto para poder realizar consultas.");   
             }
         //Si existen errores SQL
         } catch (SQLException e) {
@@ -378,8 +417,15 @@ public class Main {
      */
     private static void actualizaCliente1() {
         try {
-            //Ejecutamos la consulta
-            st.executeUpdate("UPDATE cliente SET nombre = 'PEPE' WHERE DNI = '33305686F'");
+            //Comprobamos si existe la tabla
+            if (compruebaTabla("cliente")) {
+                //Ejecutamos la consulta
+                st.executeUpdate("UPDATE cliente SET nombre = 'PEPE' WHERE DNI = '33305686F'");
+            //En el caso de no existir la tabla cliente
+            } else {
+                //Notificamos dicha eventualidad feedback
+                System.err.println("Debe crear previamente la tabla cliente para poder realizar modificaciones.");   
+            }
         //Si existen errores SQL
         } catch (SQLException e) {
             //Lanzamos mensaje feedback
@@ -392,13 +438,20 @@ public class Main {
      */
     private static void actualizaCliente2() {
         try {
-            //Preparamos la consulta
-            ps = con.prepareStatement("UPDATE cliente SET nombre = ? WHERE DNI = ?" );
-            //Definimos los parametros
-            ps.setString(1, "JOSEFA");
-            ps.setString(2, "72175846Y");
-            //Ejecutamos la consulta
-            ps.executeUpdate();
+            //Comprobamos si existe la tabla
+            if (compruebaTabla("cliente")) {
+                //Preparamos la consulta
+                ps = con.prepareStatement("UPDATE cliente SET nombre = ? WHERE DNI = ?" );
+                //Definimos los parametros
+                ps.setString(1, "JOSEFA");
+                ps.setString(2, "72175846Y");
+                //Ejecutamos la consulta
+                ps.executeUpdate();
+            //En el caso de no existir la tabla cliente
+            } else {
+                //Notificamos dicha eventualidad feedback
+                System.err.println("Debe crear previamente la tabla cliente para poder realizar modificaciones.");   
+            }
         //Si existen errores SQL
         } catch (SQLException e) {
             //Lanzamos mensaje feedback
@@ -411,13 +464,20 @@ public class Main {
      */
     private static void actualizaMoto1() {
         try {
-            //Preparamos la consulta
-            ps = con.prepareStatement("UPDATE moto SET color = ? WHERE matricula = ?" );
-            //Definimos los parametros
-            ps.setString(1, "ROJA");
-            ps.setString(2, "9999HHF");
-            //Ejecutamos la consulta
-            ps.executeUpdate();
+            //Comprobamos si existe la tabla
+            if (compruebaTabla("moto")) {
+                //Preparamos la consulta
+                ps = con.prepareStatement("UPDATE moto SET color = ? WHERE matricula = ?" );
+                //Definimos los parametros
+                ps.setString(1, "ROJA");
+                ps.setString(2, "9999HHF");
+                //Ejecutamos la consulta
+                ps.executeUpdate();
+            //En el caso de no existir la tabla moto
+            } else {
+                //Notificamos dicha eventualidad feedback
+                System.err.println("Debe crear previamente la tabla moto para poder realizar modificaciones.");   
+            }
         //Si existen errores SQL
         } catch (SQLException e) {
             //Lanzamos mensaje feedback
@@ -458,5 +518,28 @@ public class Main {
             }
         }
     }
+    
+    /**
+     * Método que comprueba si existe una tabla en la base de datos pasada por parámetros
+     * 
+     * @param tabla String del nombre de la tabla a comprobar
+     * 
+     * @return Valor true si existe o valor false en caso contrario
+     */
+    private static boolean compruebaTabla(String tabla) {
+        //Creamos flag de control y damos por sentado previamente que no existe la tabla pasada
+        boolean existe = false;
+        try {
+            //Obtenemos las tabla solicitada
+            rs = db.getTables(null, null, tabla, null);
+            //Si existe, lo asignamos al valor
+            existe = (rs.next());
+        } catch (SQLException e) {
+            //Lanzamos mensaje feedback
+            System.err.println("SQL Error: " + e.toString());
+        }
+        return existe;
+    }
+    
     
 }
