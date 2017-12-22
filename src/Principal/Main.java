@@ -156,7 +156,7 @@ public class Main {
     }
     
     /**
-     * Método creaCliente, que creará la tabla moto previa comprobación de la existencia en la base de datos de la tabla 
+     * Método creaMoto, que creará la tabla moto previa comprobación de la existencia en la base de datos de la tabla 
      * cliente dado que al no existir puede dar error. En el caso de existir la misma, comprobará posteriormente si existe la 
      * tabla moto, y en el caso de existir, omitirá el paso y lo notificará.
      */
@@ -540,6 +540,4 @@ public class Main {
         }
         return existe;
     }
-    
-    
 }
